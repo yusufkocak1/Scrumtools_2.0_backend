@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: scrum-tools-postgres
+    environment:
+      POSTGRES_DB: scrum_tools_db
+      POSTGRES_USER: scrum_user
+      POSTGRES_PASSWORD: scrum_password
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - scrum-tools-network
+
+  app:
+    build: .
+    container_name: scrum-tools-app
+    depends_on:
+      - postgres
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/scrum_tools_db
+      SPRING_DATASOURCE_USERNAME: scrum_user
+      SPRING_DATASOURCE_PASSWORD: scrum_password
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_SHOW_SQL: true
+    networks:
+      - scrum-tools-network
+
+volumes:
+  postgres_data:
+
+networks:
+  scrum-tools-network:
+    driver: bridge
