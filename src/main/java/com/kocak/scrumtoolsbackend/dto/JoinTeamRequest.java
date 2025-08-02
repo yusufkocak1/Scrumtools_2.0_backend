@@ -2,22 +2,22 @@ package com.kocak.scrumtoolsbackend.dto;
 
 import jakarta.validation.constraints.NotBlank;
 
+
 public class JoinTeamRequest {
 
-    @NotBlank(message = "Takım kodu boş olamaz")
-    private String teamCode;
+    @NotBlank(message = "invite kodu boş olamaz")
+    private String inviteCode;
 
     public JoinTeamRequest() {}
 
-    public JoinTeamRequest(String teamCode) {
-        this.teamCode = teamCode;
+    public JoinTeamRequest(String inviteCode) {
+        this.inviteCode = inviteCode;
+    }
+    public String getInviteCode() {
+        return inviteCode;
     }
 
-    public String getTeamCode() {
-        return teamCode;
-    }
-
-    public void setTeamCode(String teamCode) {
-        this.teamCode = teamCode;
+    public void setInviteCode(String inviteCode) {
+        this.inviteCode = inviteCode;
     }
 }

@@ -35,11 +35,11 @@ public class TeamController {
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<TeamSummaryDto>>> getTeams() {
+    public ResponseEntity<ApiResponse<List<TeamDto>>> getTeams() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String userEmail = authentication.getName();
 
-        ApiResponse<List<TeamSummaryDto>> response = teamService.getUserTeams(userEmail);
+        ApiResponse<List<TeamDto>> response = teamService.getUserTeams(userEmail);
 
         if (response.isSuccess()) {
             return ResponseEntity.ok(response);
@@ -101,12 +101,78 @@ public class TeamController {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String userEmail = authentication.getName();
 
-        ApiResponse<TeamDto> response = teamService.joinTeamByCode(request.getTeamCode(), userEmail);
+        ApiResponse<TeamDto> response = teamService.joinTeamByCode(request.getInviteCode(), userEmail);
 
         if (response.isSuccess()) {
             return ResponseEntity.ok(response);
         } else {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+        }
+    }
+
+    // Yeni davet kodu oluşturma
+    @PostMapping("/{id}/invite-code")
+    public ResponseEntity<ApiResponse<String>> generateNewInviteCode(@PathVariable Long id) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String userEmail = authentication.getName();
+
+        ApiResponse<String> response = teamService.generateNewInviteCode(id, userEmail);
+
+        if (response.isSuccess()) {
+            return ResponseEntity.ok(response);
+        } else {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
+        }
+    }
+
+    // Onay bekleyen üyeleri listeleme
+    @GetMapping("/{id}/pending-members")
+    public ResponseEntity<ApiResponse<List<TeamMemberDto>>> getPendingMembers(@PathVariable Long id) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String userEmail = authentication.getName();
+
+        ApiResponse<List<TeamMemberDto>> response = teamService.getPendingMembers(id, userEmail);
+
+        if (response.isSuccess()) {
+            return ResponseEntity.ok(response);
+        } else {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
+        }
+    }
+
+    // Üye onaylama
+    @PostMapping("/{id}/approve-member")
+    public ResponseEntity<ApiResponse<String>> approveMember(
+            @PathVariable Long id,
+            @Valid @RequestBody ApproveMemberRequest request) {
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String userEmail = authentication.getName();
+
+        ApiResponse<String> response = teamService.approveMember(id, request, userEmail);
+
+        if (response.isSuccess()) {
+            return ResponseEntity.ok(response);
+        } else {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
+    }
+
+    // Üye reddetme
+    @PostMapping("/{id}/reject-member/{memberId}")
+    public ResponseEntity<ApiResponse<String>> rejectMember(
+            @PathVariable Long id,
+            @PathVariable Long memberId) {
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String userEmail = authentication.getName();
+
+        ApiResponse<String> response = teamService.rejectMember(id, memberId, userEmail);
+
+        if (response.isSuccess()) {
+            return ResponseEntity.ok(response);
+        } else {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
     }
 }

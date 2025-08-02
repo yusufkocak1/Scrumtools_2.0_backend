@@ -7,6 +7,7 @@ import jakarta.validation.constraints.Size;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.UUID;
 
 @Entity
 @Table(name = "teams")
@@ -25,6 +26,9 @@ public class Team {
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    @Column(name = "invite_code", unique = true)
+    private String inviteCode;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by", nullable = false)
     private User createdBy;
@@ -42,6 +46,9 @@ public class Team {
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
+        if (inviteCode == null) {
+            generateInviteCode();
+        }
     }
 
     @PreUpdate
@@ -56,6 +63,7 @@ public class Team {
         this.name = name;
         this.description = description;
         this.createdBy = createdBy;
+        generateInviteCode();
     }
 
     // Getters and Setters
@@ -67,6 +75,9 @@ public class Team {
 
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
+
+    public String getInviteCode() { return inviteCode; }
+    public void setInviteCode(String inviteCode) { this.inviteCode = inviteCode; }
 
     public User getCreatedBy() { return createdBy; }
     public void setCreatedBy(User createdBy) { this.createdBy = createdBy; }
@@ -93,5 +104,9 @@ public class Team {
 
     public int getMemberCount() {
         return teamMembers.size();
+    }
+
+    public void generateInviteCode() {
+        this.inviteCode = UUID.randomUUID().toString().replace("-", "").substring(0, 8).toUpperCase();
     }
 }

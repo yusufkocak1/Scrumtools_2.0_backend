@@ -11,6 +11,7 @@ public class TeamDto {
     private String name;
     private String description;
     private String createdBy;
+    private String inviteCode; // Davet kodu eklendi
     private List<TeamMemberDto> members;
     private LocalDateTime createdAt;
 
@@ -22,6 +23,7 @@ public class TeamDto {
         this.name = team.getName();
         this.description = team.getDescription();
         this.createdBy = team.getCreatedBy().getEmail();
+        this.inviteCode = team.getInviteCode(); // Davet kodu eklendi
         this.members = team.getTeamMembers().stream()
                 .map(TeamMemberDto::new)
                 .collect(Collectors.toList());
@@ -40,6 +42,9 @@ public class TeamDto {
 
     public String getCreatedBy() { return createdBy; }
     public void setCreatedBy(String createdBy) { this.createdBy = createdBy; }
+
+    public String getInviteCode() { return inviteCode; }
+    public void setInviteCode(String inviteCode) { this.inviteCode = inviteCode; }
 
     public List<TeamMemberDto> getMembers() { return members; }
     public void setMembers(List<TeamMemberDto> members) { this.members = members; }

@@ -11,6 +11,7 @@ public class PokerMessageDto {
     public enum MessageType {
         SESSION_CREATED,
         SESSION_UPDATED,
+        VOTING_STARTED,
         VOTE_CAST,
         VOTES_REVEALED,
         SESSION_COMPLETED,

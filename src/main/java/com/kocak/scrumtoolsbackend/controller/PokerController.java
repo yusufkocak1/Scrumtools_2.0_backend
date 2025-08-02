@@ -94,6 +94,21 @@ public class PokerController {
         }
     }
 
+    @PostMapping("/sessions/{sessionId}/start-voting")
+    public ResponseEntity<ApiResponse<PokerSessionDto>> startVoting(
+            @PathVariable Long sessionId,
+            Authentication authentication) {
+        try {
+            PokerSessionDto session = pokerService.startVoting(sessionId, authentication.getName());
+            ApiResponse<PokerSessionDto> response = ApiResponse.success(session);
+            response.setMessage("Oylama başarıyla başlatıldı");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
     @GetMapping("/teams/{teamId}/active-session")
     public ResponseEntity<ApiResponse<PokerSessionDto>> getActiveSession(
             @PathVariable Long teamId,

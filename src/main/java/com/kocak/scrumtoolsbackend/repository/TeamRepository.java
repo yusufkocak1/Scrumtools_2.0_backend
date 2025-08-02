@@ -20,4 +20,6 @@ public interface TeamRepository extends JpaRepository<Team, Long> {
 
     @Query("SELECT t FROM Team t WHERE t.createdBy = :user OR EXISTS (SELECT tm FROM TeamMember tm WHERE tm.team = t AND tm.user = :user)")
     List<Team> findAllUserTeams(@Param("user") User user);
+
+    Optional<Team> findByInviteCode(String inviteCode);
 }

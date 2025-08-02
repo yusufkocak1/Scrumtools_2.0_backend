@@ -21,4 +21,9 @@ public interface TeamMemberRepository extends JpaRepository<TeamMember, Long> {
     boolean existsByTeamAndUser(Team team, User user);
 
     void deleteByTeamAndUser(Team team, User user);
+
+    // Status ile ilgili sorgular
+    List<TeamMember> findByTeamAndStatus(Team team, TeamMember.MemberStatus status);
+
+    List<TeamMember> findByTeamAndStatusIn(Team team, List<TeamMember.MemberStatus> statuses);
 }

@@ -215,6 +215,40 @@ public class PokerService {
         return sessionDto;
     }
 
+    public PokerSessionDto startVoting(Long sessionId, String userEmail) {
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı"));
+
+        PokerSession session = pokerSessionRepository.findById(sessionId)
+                .orElseThrow(() -> new RuntimeException("Poker oturumu bulunamadı"));
+
+        // Sadece oturum oluşturan kişi oylamayı başlatabilir
+        if (!session.getCreatedBy().getId().equals(user.getId())) {
+            throw new RuntimeException("Sadece oturum oluşturan kişi oylamayı başlatabilir");
+        }
+
+        // Oturum durumunu kontrol et - sadece WAITING durumundayken başlatılabilir
+        if (session.getStatus() != PokerSession.SessionStatus.WAITING) {
+            throw new RuntimeException("Oylama sadece beklemede olan oturumlarda başlatılabilir");
+        }
+
+        // Oturum durumunu VOTING olarak güncelle
+        session.setStatus(PokerSession.SessionStatus.VOTING);
+        session = pokerSessionRepository.save(session);
+
+        PokerSessionDto sessionDto = convertToDto(session, user);
+
+        // WebSocket ile takıma oylamanın başladığını bildir
+        PokerMessageDto message = new PokerMessageDto(
+                PokerMessageDto.MessageType.VOTING_STARTED,
+                session.getId(),
+                sessionDto
+        );
+        messagingTemplate.convertAndSend("/topic/poker/team/" + session.getTeam().getId(), message);
+
+        return sessionDto;
+    }
+
     public PokerSessionDto getActiveSession(Long teamId, String userEmail) {
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı"));

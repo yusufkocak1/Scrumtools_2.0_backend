@@ -23,12 +23,21 @@ public class TeamMember {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    private MemberStatus status = MemberStatus.PENDING;
+
     @ElementCollection(targetClass = TeamRole.class, fetch = FetchType.EAGER)
     @Enumerated(EnumType.STRING)
     @CollectionTable(name = "team_member_roles",
                     joinColumns = @JoinColumn(name = "team_member_id"))
     @Column(name = "role")
     private Set<TeamRole> roles = new HashSet<>();
+
+    // Geçici olarak eski role kolonu - migration sonrası kaldırılacak
+    @Enumerated(EnumType.STRING)
+    @Column(name = "role")
+    private TeamRole legacyRole;
 
     @Column(name = "joined_at", nullable = false)
     private LocalDateTime joinedAt;
@@ -38,20 +47,38 @@ public class TeamMember {
         joinedAt = LocalDateTime.now();
         // Eğer hiç rol atanmamışsa, default olarak MEMBER rolü ekle
         if (roles.isEmpty()) {
-            roles.add(TeamRole.MEMBER);
+            roles.add(TeamRole.OBSERVER);
+        }
+        // Legacy role kolonu için de default değer ata
+        if (legacyRole == null) {
+            legacyRole = TeamRole.OBSERVER;
+        }
+        // Default olarak PENDING status
+        if (status == null) {
+            status = MemberStatus.PENDING;
+        }
+    }
+
+    @PostLoad
+    protected void onLoad() {
+        // Veritabanından yüklendiğinde, legacy role'dan roles set'ini oluştur
+        if (roles.isEmpty() && legacyRole != null) {
+            roles.add(legacyRole);
         }
     }
 
     // Constructors
     public TeamMember() {
         this.roles = new HashSet<>();
+        this.status = MemberStatus.PENDING;
     }
 
     public TeamMember(Team team, User user) {
         this.team = team;
         this.user = user;
         this.roles = new HashSet<>();
-        this.roles.add(TeamRole.MEMBER); // Default rol
+        this.roles.add(TeamRole.OBSERVER); // Default rol
+        this.status = MemberStatus.PENDING; // Default olarak pending
     }
 
     public TeamMember(Team team, User user, TeamRole role) {
@@ -59,6 +86,7 @@ public class TeamMember {
         this.user = user;
         this.roles = new HashSet<>();
         this.roles.add(role);
+        this.status = MemberStatus.PENDING;
     }
 
     public TeamMember(Team team, User user, Set<TeamRole> roles) {
@@ -67,8 +95,30 @@ public class TeamMember {
         this.roles = roles != null ? new HashSet<>(roles) : new HashSet<>();
         // En az MEMBER rolü olmalı
         if (this.roles.isEmpty()) {
-            this.roles.add(TeamRole.MEMBER);
+            this.roles.add(TeamRole.OBSERVER);
         }
+        this.status = MemberStatus.PENDING;
+    }
+
+    // Status kontrol metodları
+    public boolean isPending() {
+        return status == MemberStatus.PENDING;
+    }
+
+    public boolean isActive() {
+        return status == MemberStatus.ACTIVE;
+    }
+
+    public boolean isRejected() {
+        return status == MemberStatus.REJECTED;
+    }
+
+    public void approve() {
+        this.status = MemberStatus.ACTIVE;
+    }
+
+    public void reject() {
+        this.status = MemberStatus.REJECTED;
     }
 
     // Rol yönetimi metodları
@@ -80,7 +130,7 @@ public class TeamMember {
         this.roles.remove(role);
         // En az MEMBER rolü kalmalı
         if (this.roles.isEmpty()) {
-            this.roles.add(TeamRole.MEMBER);
+            this.roles.add(TeamRole.OBSERVER);
         }
     }
 
@@ -115,27 +165,36 @@ public class TeamMember {
         this.roles = roles != null ? roles : new HashSet<>();
         // En az MEMBER rolü olmalı
         if (this.roles.isEmpty()) {
-            this.roles.add(TeamRole.MEMBER);
+            this.roles.add(TeamRole.OBSERVER);
         }
     }
+
+    public MemberStatus getStatus() { return status; }
+    public void setStatus(MemberStatus status) { this.status = status; }
 
     // Backward compatibility için - sadece ilk rolü döndürür
     @Deprecated
     public TeamRole getRole() {
-        return roles.isEmpty() ? TeamRole.MEMBER : roles.iterator().next();
+        return roles.isEmpty() ? TeamRole.OBSERVER : roles.iterator().next();
     }
 
     // Backward compatibility için - role set'e ekler
     @Deprecated
     public void setRole(TeamRole role) {
         this.roles.clear();
-        this.roles.add(role != null ? role : TeamRole.MEMBER);
+        this.roles.add(role != null ? role : TeamRole.OBSERVER);
     }
 
     public LocalDateTime getJoinedAt() { return joinedAt; }
     public void setJoinedAt(LocalDateTime joinedAt) { this.joinedAt = joinedAt; }
 
     public enum TeamRole {
-        ADMIN, SCRUM_MASTER, PRODUCT_OWNER, DEVELOPER, TESTER, ANALYST, MEMBER, TECHNICAL_LEAD, OBSERVER
+        ADMIN, SCRUM_MASTER, PRODUCT_OWNER, DEVELOPER, TESTER, ANALYST, TECHNICAL_LEAD, OBSERVER
+    }
+
+    public enum MemberStatus {
+        PENDING,    // Onay bekliyor
+        ACTIVE,     // Aktif üye
+        REJECTED    // Reddedildi
     }
 }

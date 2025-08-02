@@ -12,6 +12,7 @@ public class TeamMemberDto {
     private String lastName;
     private List<String> roles; // Birden fazla rol için değiştirildi
     private String role; // Backward compatibility için korundu
+    private String status; // Üyelik durumu
 
     // Constructors
     public TeamMemberDto() {}
@@ -29,6 +30,9 @@ public class TeamMemberDto {
 
         // Backward compatibility için ilk rolü al
         this.role = teamMember.getRole().name();
+
+        // Status bilgisini ekle
+        this.status = teamMember.getStatus().name();
     }
 
     // Getters and Setters
@@ -50,4 +54,7 @@ public class TeamMemberDto {
     // Backward compatibility için korundu
     public String getRole() { return role; }
     public void setRole(String role) { this.role = role; }
+
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
 }
