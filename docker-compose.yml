@@ -5,16 +5,18 @@ services:
     image: postgres:15-alpine
     container_name: scrum-tools-postgres
     environment:
-      POSTGRES_DB: scrum_tools_db
-      POSTGRES_USER: scrum_user
-      POSTGRES_PASSWORD: scrum_password
+      POSTGRES_DB: scrumtools
+      POSTGRES_USER: scrumuser
+      POSTGRES_PASSWORD: scrumpass
     ports:
-      - "5433:5432"
+      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - scrum-tools-network
+    mem_limit: 256m
+    command: postgres -c shared_buffers=64MB -c effective_cache_size=128MB -c maintenance_work_mem=16MB -c checkpoint_completion_target=0.9 -c wal_buffers=4MB -c default_statistics_target=100
 
   app:
     build: .
@@ -24,13 +26,22 @@ services:
     ports:
       - "8080:8080"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/scrum_tools_db
-      SPRING_DATASOURCE_USERNAME: scrum_user
-      SPRING_DATASOURCE_PASSWORD: scrum_password
+      SPRING_PROFILES_ACTIVE: dev
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/scrumtools
+      SPRING_DATASOURCE_USERNAME: scrumuser
+      SPRING_DATASOURCE_PASSWORD: scrumpass
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       SPRING_JPA_SHOW_SQL: true
     networks:
       - scrum-tools-network
+    mem_limit: 512m
+    memswap_limit: 768m
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
 volumes:
   postgres_data:
